@@ -4,56 +4,24 @@ import socket
 import re
 import datetime
 import cx_Oracle
-from flask import Flask, request
-from flask import render_template
-app = Flask(__name__)
+from flask import Flask, request, render_template, redirect
+app = Flask(__name__, template_folder="templates")
 
 
 @app.route('/')
 def home_page():
-    render_template("index.html")
+    return render_template("index.html")
 
 
-@app.route('/luhn')
-def luhn_check():
-    pan = request.args.get('pan')
-    if len(pan) == 16:
-        a = []
-        b = pan
-        for i in range(len(pan)):
-            a.append(int(b[i]))
-        c = a[0::2]
-        c1 = [i * 2 for i in c]
-        for i in range(len(c1)):
-            if c1[i] > 9:
-                c1[i] -= 9
-        d = a[1::2]
-        a1 = c1 + d
-        e = sum(a1)
-        if e % 10 == 0:
-            return "PAN is valid."
-
-        else:
-            k = e
-            while e % 10 != 0:
-                e += 1
-            sum1 = e - k + int(b[-1])
-            if sum1 > 9:
-                sum1 = str(sum1)[1]
-            return "Last digit should be {}.".format(sum1)
-
-    else:
-        return "PAN not entered!"
-
-
-@app.route('/transaction')
+@app.route('/', methods = ['POST'])
 def transaction():
-    amount = request.args.get('amount')
-    pan = request.args.get('pan')
-    entry_mode = request.args.get('entry_mode')
-    tran_code = request.args.get('tran_code')
-    tid = request.args.get('tid')
-    tran_type = request.args.get('tran_type')
+    tran_type = request.form['tran_type']
+    tran_code = request.form['tran_code']
+    amount = request.form['amount']
+    pan = request.form['pan']
+    entry_mode = request.form['entry_mode']
+    tid = request.form['tid']
+    condition = request.form['condition']
 
     # Special control characters
     DLE = '\x10'
@@ -95,7 +63,7 @@ FIMI/POSRequest/Rq/Currency=978
 FIMI/POSRequest/Rq/PAN={pan}
 FIMI/POSRequest/Rq/Track2={pan}=2512
 FIMI/POSRequest/Rq/OrigTime={origtime}
-FIMI/POSRequest/Rq/Condition=87
+FIMI/POSRequest/Rq/Condition={condition}
 FIMI/POSRequest/Rq/EntryMode={entry_mode}
 FIMI/POSRequest/Rq/TermName={tid}
 FIMI/POSRequest/Rq/RetailerName=104500000000001
@@ -109,8 +77,9 @@ FIMI/POSRequest/Rq/MBR=0""".replace('\n', '\x10').format(echo=echo,
                                                          pan=pan,
                                                          entry_mode=entry_mode,
                                                          tran_code=tran_code,
-                                                         tid=tid)
-    # print(auth)
+                                                         tid=tid,
+                                                         condition=condition)
+    print(auth)
     length = '%06d' % len(auth)  # What does this do?
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect(('10.10.251.7', 6007))
@@ -180,15 +149,52 @@ FIMI/POSRequest/Rq/MBR=0""".replace('\n', '\x10').format(echo=echo1,
             pres_response = s.recv(1024)  # presentment response
             s.close()
             print(pres_response)
-            return "{}\n{}".format("Authorization approved! Transaction ID: " + tran_id.replace('\\x10', ''),
-                                   "Presentment approved! Transaction ID: " + re.search(r'(?<=ThisTranId=).*', str(pres_response)).group(0)).replace("\\x03'", "")
+            return render_template("index.html", embed="Authorization approved! Transaction ID: " + tran_id.replace('\\x10', ''),
+                                   membed="Presentment approved! Transaction ID: " + re.search(r"(?<=ThisTranId=).*", str(pres_response)).group(0).replace("\\x03'", ""))
     except:
         try:
             decline_reason = re.search("(?<=DeclineReason=).*(?=FIMI)", str(data)).group(0)
-            return "Authorizer response: " + decline_reason.replace('\\x10', '')
+            return render_template("index.html", embed="Decline reason: " + decline_reason.replace('\\x10', ''))
         except:
             decline_reason = re.search(r'(?<=AuthRespCode=).*?(?=FIMI)', str(data)).group(0)
-            return "Authorizer response: " + decline_reason.replace('\\x10', '')
+            return render_template("index.html", embed="Decline reason: " + decline_reason.replace('\\x10', ''))
+
+
+@app.route('/luhn')
+def luhn():
+    return render_template("luhn.html")
+
+
+@app.route('/luhn', methods=['POST'])
+def luhn_check():
+    pan = request.form['pan']
+    if len(pan) == 16:
+        a = []
+        b = pan
+        for i in range(len(pan)):
+            a.append(int(b[i]))
+        c = a[0::2]
+        c1 = [i * 2 for i in c]
+        for i in range(len(c1)):
+            if c1[i] > 9:
+                c1[i] -= 9
+        d = a[1::2]
+        a1 = c1 + d
+        e = sum(a1)
+        if e % 10 == 0:
+            return render_template("luhn.html", luhn="PAN is valid.")
+
+        else:
+            k = e
+            while e % 10 != 0:
+                e += 1
+            sum1 = e - k + int(b[-1])
+            if sum1 > 9:
+                sum1 = str(sum1)[1]
+            return render_template("luhn.html", luhn="Last digit should be {}.".format(sum1))
+
+    else:
+        return render_template("luhn.html", luhn="PAN not entered!")
 
 
 if __name__ == '__main__':
