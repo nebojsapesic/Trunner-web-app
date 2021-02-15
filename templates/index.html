@@ -1,0 +1,109 @@
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"> 
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+
+<style>
+.main {
+  max-width: 500px;
+  margin: auto;
+  margin-top: 100px;
+}
+
+.response {
+	max-width: 500px;
+    margin: auto;
+	margin-top: 20px;
+	justify-content: center;
+	align-items: center;
+	font-size: 24px;
+
+}
+</style>
+
+<!-- Grey with black text -->
+<nav class="navbar navbar-expand-sm bg-primary navbar-dark">
+  <ul class="navbar-nav">
+    <li class="nav-item active">
+      <a class="nav-link" href="/">Trunner</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="luhn">Luhn check</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="#">Link</a>
+    </li>
+  </ul>
+</nav>
+
+<div class="main">
+<form method="post">
+  <div class="form-group row">
+    <label for="tran_type" class="col-4 col-form-label">Transaction type</label> 
+    <div class="col-8">
+      <select id="tran_type" name="tran_type" required="required" class="custom-select">
+        <option value="100">100</option>
+        <option value="200">200</option>
+      </select>
+    </div>
+  </div>
+  <div class="form-group row">
+    <label for="tran_code" class="col-4 col-form-label">Transaction code</label> 
+    <div class="col-8">
+      <select id="tran_code" name="tran_code" class="custom-select" required="required">
+        <option value="110">110</option>
+        <option value="132">132</option>
+        <option value="133">133</option>
+      </select>
+    </div>
+  </div>
+  <div class="form-group row">
+    <label for="amount" class="col-4 col-form-label">Amount</label> 
+    <div class="col-8">
+      <input id="amount" name="amount" type="text" required="required" class="form-control">
+    </div>
+  </div>
+  <div class="form-group row">
+    <label for="pan" class="col-4 col-form-label">PAN</label> 
+    <div class="col-8">
+      <input id="pan" name="pan" type="text" class="form-control" required="required">
+    </div>
+  </div>
+  <div class="form-group row">
+    <label for="entry_mode" class="col-4 col-form-label">Entry mode</label> 
+    <div class="col-8">
+      <select id="entry_mode" name="entry_mode" required="required" class="custom-select">
+        <option value="012">012</option>
+        <option value="051">051</option>
+      </select>
+    </div>
+  </div>
+    <div class="form-group row">
+    <label for="condition" class="col-4 col-form-label">Entry mode</label> 
+    <div class="col-8">
+      <select id="condition" name="condition" required="required" class="custom-select">
+        <option value="00">00 Normal</option>
+        <option value="08">08 Mail/phone order</option>
+		<option value="81">81 3D Secure Acruirer only</option>
+		<option value="82">82 3D Secure</option>
+		<option value="87">87 Channel encrypted VSEC</option>
+		<option value="91">91 EMV chip transaction</option>
+      </select>
+    </div>
+  </div>
+  <div class="form-group row">
+    <label for="tid" class="col-4 col-form-label">Terminal ID</label> 
+    <div class="col-8">
+      <input id="tid" name="tid" type="text" required="required" class="form-control">
+    </div>
+  </div>
+  <div class="form-group row">
+    <div class="offset-4 col-8">
+      <button name="submit" type="submit" class="btn btn-primary">Send</button>
+    </div>
+  </div>
+</form>
+
+<div class="response">
+<p id='embed'>{{embed}}</p>
+<p id='membed'>{{membed}}</p>
+</div>
+</div>
