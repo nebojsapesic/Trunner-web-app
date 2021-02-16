@@ -21,7 +21,17 @@ def transaction():
     pan = request.form['pan']
     entry_mode = request.form['entry_mode']
     tid = request.form['tid']
+    mid = request.form['mid']
     condition = request.form['condition']
+    fi = request.form['fi']
+    if fi == 'WDTA':
+        clerk = 'WAFIMI01'
+        port = 10506
+    elif fi == 'SAND':
+        clerk = 'SANDEPE1'
+        port = 6007
+    else:
+        print("Port not found.")
 
     # Special control characters
     DLE = '\x10'
@@ -52,8 +62,8 @@ Echo=NEB{echo}{rand}
 Ver=1
 Product=FIMI
 FIMI/Ver=3.5
-FIMI/Clerk=SANDPE1
-FIMI/Password=SANDPE1
+FIMI/Clerk={clerk}
+FIMI/Password={clerk}
 FIMI/TransactionNumber=NEB{echo}{rand}
 FIMI/Operation=POSRequest
 FIMI/POSRequest/Rq/TranType={tran_type}
@@ -66,7 +76,7 @@ FIMI/POSRequest/Rq/OrigTime={origtime}
 FIMI/POSRequest/Rq/Condition={condition}
 FIMI/POSRequest/Rq/EntryMode={entry_mode}
 FIMI/POSRequest/Rq/TermName={tid}
-FIMI/POSRequest/Rq/RetailerName=104500000000001
+FIMI/POSRequest/Rq/RetailerName={mid}
 FIMI/POSRequest/Rq/DraftCapture=0
 FIMI/POSRequest/Rq/FromAcctType=0
 FIMI/POSRequest/Rq/MBR=0""".replace('\n', '\x10').format(echo=echo,
@@ -78,11 +88,14 @@ FIMI/POSRequest/Rq/MBR=0""".replace('\n', '\x10').format(echo=echo,
                                                          entry_mode=entry_mode,
                                                          tran_code=tran_code,
                                                          tid=tid,
-                                                         condition=condition)
+                                                         condition=condition,
+                                                         clerk=clerk,
+                                                         password=clerk,
+                                                         mid=mid)
     print(auth)
     length = '%06d' % len(auth)  # What does this do?
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect(('10.10.251.7', 6007))
+    s.connect(('10.10.251.7', port))
     k = STX + length + auth + ETX
     s.send(bytes(k, 'utf-8'))
     data = s.recv(8192)  # authorization response - BYTES
@@ -106,8 +119,8 @@ Echo=NEB{echo}{rand}
 Ver=1
 Product=FIMI
 FIMI/Ver=3.5
-FIMI/Clerk=SANDPE1
-FIMI/Password=SANDPE1
+FIMI/Clerk={clerk}
+FIMI/Password={clerk}
 FIMI/TransactionNumber=NEB{echo}{rand}
 FIMI/Operation=POSRequest
 FIMI/POSRequest/Rq/TranType=220
@@ -117,10 +130,10 @@ FIMI/POSRequest/Rq/Currency=978
 FIMI/POSRequest/Rq/PAN={pan}
 FIMI/POSRequest/Rq/Track2={pan}=2512
 FIMI/POSRequest/Rq/OrigTime={origtime}
-FIMI/POSRequest/Rq/Condition=87
+FIMI/POSRequest/Rq/Condition={condition}
 FIMI/POSRequest/Rq/EntryMode={entry_mode}
 FIMI/POSRequest/Rq/TermName={tid}
-FIMI/POSRequest/Rq/RetailerName=104500000000001
+FIMI/POSRequest/Rq/RetailerName={mid}
 FIMI/POSRequest/Rq/DraftCapture=2
 FIMI/POSRequest/Rq/FromAcctType=0
 FIMI/POSRequest/Rq/ApprovalCode={approval_code}
@@ -134,9 +147,13 @@ FIMI/POSRequest/Rq/MBR=0""".replace('\n', '\x10').format(echo=echo1,
                                                          extrrn=extrrn,
                                                          approval_code=approval_code,
                                                          tid=tid,
+                                                         mid=mid,
                                                          pan=pan,
                                                          entry_mode=entry_mode,
-                                                         tran_code=tran_code)
+                                                         tran_code=tran_code,
+                                                         condition=condition,
+                                                         clerk=clerk,
+                                                         password=clerk)
             # print(pres)
 ##            if str(condition) in ('81', '82'):
 ##                if pan[0] == '4':
@@ -144,7 +161,7 @@ FIMI/POSRequest/Rq/MBR=0""".replace('\n', '\x10').format(echo=echo1,
             length = '%06d' % len(pres)  # What does this do?
             pres_req = STX + length + pres + ETX
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.connect(('10.10.251.7', 6007))
+            s.connect(('10.10.251.7', port))
             s.send(bytes(pres_req, 'utf-8'))
             pres_response = s.recv(1024)  # presentment response
             s.close()
